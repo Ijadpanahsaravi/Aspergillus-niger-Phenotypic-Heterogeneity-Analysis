@@ -8,6 +8,16 @@ View the full R Markdown analysis and figures on RPubs:
 👉 [RPubs Report – Aspergillus Heterogeneity](https://rpubs.com/maryams/1287959)
 
 > Includes visualizations, statistical results, and interpretation of phenotypic variation.
+>
+> ## 📁 Dataset Access
+
+The raw image-derived data used in this analysis are archived on Zenodo:
+
+🔗 **DOI: [10.5281/zenodo.XXXXXXX](https://doi.org/10.5281/zenodo.XXXXXXX)**
+
+> Contains CSV files with morphological traits (e.g., Area, Contrast) of *Aspergillus niger* strains.  
+> Uploaded as part of a PhD thesis project studying phenotypic heterogeneity using time-lapse imaging.
+
 
 
 
