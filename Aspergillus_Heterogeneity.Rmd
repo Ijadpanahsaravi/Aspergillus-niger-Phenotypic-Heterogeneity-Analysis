@@ -1,0 +1,145 @@
+---
+title: "Phenotypic Heterogeneity in Aspergillus niger Strains"
+author: "Maryam Ijadpanahsaravi"
+date: '2025-03-23'
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: '2'
+  html_document:
+    toc: yes
+    toc_depth: 2
+    number_sections: yes
+    theme: readable
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(tidyverse)
+library(ggridges)
+library(cowplot)
+```
+
+1. Introduction
+This analysis explores phenotypic heterogeneity in Aspergillus niger strains using time-lapse imaging data.
+We focus on the first time point (time = 0) to capture inherent variability.
+
+Phenotypic traits studied:
+
+Area (spore size)
+
+Contrast (visual texture/color variation)
+
+Strains:
+
+N402 (Mature reference strain)
+
+N402 38h (Immature reference strain)
+
+SJS128 (mutant strain)
+
+2. Load & Filter Data
+```{r}
+# Read CSVs (replace paths if needed)
+data1 <- read.csv("G:/sjs samples/reloadSJS/results/n/1.csv")
+data2 <- read.csv("G:/sjs samples/reloadSJS/results/n/2.csv")
+data3 <- read.csv("G:/sjs samples/reloadSJS/results/n/3.csv")
+
+# Combine
+data <- bind_rows(data1, data2, data3)
+
+# Filter for time 0 and species of interest
+filtered_data_t0 <- data %>%
+  filter(time == 0, Area <= 200) %>%
+  filter(species %in% c("N402", "N402 38h", "SJS128"))
+
+```
+3. Area Distributions by Species
+```{r}
+ggplot(filtered_data_t0, aes(x = species, y = Area, fill = species)) +
+  geom_boxplot(alpha = 0.6) +
+  scale_fill_manual(values = c("SJS128" = "khaki", "N402" = "darkgreen", "N402 38h" = "olivedrab3")) +
+  theme_minimal(base_size = 14) +
+  labs(title = "Distribution of Spore Area by Species", x = "Species", y = "Area") +
+  theme(legend.position = "none")
+
+
+```
+4. Tukey HSD Post Hoc Test
+```{r}
+# ANOVA and TukeyHSD
+anova_result <- aov(Area ~ species, data = filtered_data_t0)
+summary(anova_result)
+TukeyHSD(anova_result)
+
+```
+
+5. Area vs. Contrast with Marginal Distributions
+This figure shows the heterogeneity within and between strains in terms of both size and color/contrast
+
+```{r}
+
+# Main scatter plot
+scatter_plot <- ggplot(filtered_data_t0, aes(x = Area, y = Contrast, color = species)) +
+  geom_point(size = 0.8) +
+  scale_color_manual(values = c("SJS128" = "khaki", "N402" = "darkgreen", "N402 38h" = "olivedrab3")) +
+  theme_classic(base_size = 16) + 
+  theme(legend.position = "none") +
+  labs(x = "Area", y = "Contrast") +
+  scale_x_continuous(breaks = seq(50, 180, by = 20), limits = c(70, 170))
+
+# Marginal density (top)
+density_top <- ggplot(filtered_data_t0, aes(x = Area, fill = species, y = species)) +
+  stat_density_ridges(quantile_lines = TRUE, quantiles = 0.5, scale = 1.1, alpha = 0.7) +
+  scale_fill_manual(values = c("SJS128" = "khaki", "N402" = "darkgreen", "N402 38h" = "olivedrab3")) +
+  theme_void() +
+  theme(legend.position = "none")
+
+# Marginal density (right - Contrast)
+density_right <- ggplot(filtered_data_t0, aes(x = Contrast, fill = species, y = species)) +
+  stat_density_ridges(quantile_lines = TRUE, quantiles = 0.5, scale = 1.1, alpha = 0.7) +
+  scale_fill_manual(values = c("SJS128" = "khaki", "N402" = "darkgreen", "N402 38h" = "olivedrab3")) +
+  coord_flip() +
+  theme_void() +
+  theme(legend.position = "none")
+
+# Empty for spacing
+empty_plot <- ggplot() + theme_void()
+
+# Combine
+combined_plot <- cowplot::plot_grid(
+  cowplot::plot_grid(density_top, empty_plot, ncol = 2, rel_widths = c(4, 1)),
+  cowplot::plot_grid(scatter_plot, density_right, ncol = 2, rel_widths = c(4, 1)),
+  nrow = 2, rel_heights = c(1, 3)
+)
+
+# Final plot with margin
+final_plot <- ggdraw(combined_plot) +
+  theme(plot.margin = margin(10, 10, 10, 10, "mm"))
+
+final_plot
+
+```
+6. Conclusion
+Aspergillus niger strains show inherent phenotypic heterogeneity in both spore size (Area) and contrast at time zero.
+
+Tukey’s HSD confirms statistically significant differences in Area between the three species.
+
+Visualization reveals both within-strain variation and between-strain differences.
+
+These findings support the presence of biological diversity that may influence growth dynamics.
+
+Appendix: Summary Stats
+```{r}
+filtered_data_t0 %>%
+  group_by(species) %>%
+  summarise(
+    Mean_Area = round(mean(Area), 1),
+    SD_Area = round(sd(Area), 1),
+    Mean_Contrast = round(mean(Contrast), 3),
+    SD_Contrast = round(sd(Contrast), 3),
+    Count = n()
+  )
+
+```
